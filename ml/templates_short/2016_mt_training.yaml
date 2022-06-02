@@ -1,12 +1,12 @@
 class_weights:
-  ggh: 228.85898502808072
-  misc: 61.1182510138474
-  qqh: 1640.541310143928
-  ss: 5.300878072843851
-  tt: 16.21965087970577
-  w: 5.7352701002415065
-  zll: 7.344435244940444
-  ztt: 2.3932582547721872
+  ggh: 225.65955603493333
+  misc: 68.37818734981875
+  qqh: 1886.881147144211
+  ss: 7.036276339455258
+  tt: 18.76193391958497
+  w: 7.06341153131008
+  zll: 15.43840443983722
+  ztt: 1.7281728953856257
 classes:
 - ggh
 - qqh
@@ -21,7 +21,7 @@ global_weight_scale: 1.0
 model:
   eventsPerClassAndBatch: 128
   early_stopping: 50
-  epochs: 100000
+  epochs: 10
   name: smhtt_dropout_tanh_GPU
   save_best_only: true
   steps_per_epoch: 100

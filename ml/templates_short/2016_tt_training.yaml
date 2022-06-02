@@ -15,7 +15,7 @@ global_weight_scale: 1.0
 model:
   eventsPerClassAndBatch: 128
   early_stopping: 50
-  epochs: 100000
+  epochs: 10
   name: smhtt_dropout_tanh_GPU
   save_best_only: true
   steps_per_epoch: 100
