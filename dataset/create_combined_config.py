@@ -22,6 +22,7 @@ def parse_arguments():
 def main(args):
     eras = ["2016", "2017", "2018"]
     configs = []
+    # Load training config files for all eras
     for era in eras:
         config_path = "{}/{}/training_config.yaml".format(args.input_base_path, era)
         logger.info("Try to open {}".format(config_path))
@@ -31,13 +32,12 @@ def main(args):
 
     all_era_template = {}
     for key in configs[0]:
-        if key == "datasets":
-            for i_era, era in enumerate(eras):
-                all_era_template["datasets_{}".format(era)] = configs[i_era]["datasets"]
-        elif key == "class_weights":
+        if key == "class_weights":
+            # Gather all class weights
             for i_era, era in enumerate(eras):
                 all_era_template["class_weights_{}".format(era)] = configs[i_era]["class_weights"]
         else:
+            # Use configs of first era
             all_era_template[key] = configs[0][key]
 
     if not os.path.exists(args.output_dir + "/all_eras"):
@@ -46,6 +46,7 @@ def main(args):
     output_file = args.output_dir + "/all_eras/training_config.yaml"
 
     logger.info("Writing new dataset config for all eras to {}".format(output_file))
+    # Save merged config files
     yaml.dump(all_era_template, open(output_file, 'w'), default_flow_style=False)
 
 if __name__ == "__main__":

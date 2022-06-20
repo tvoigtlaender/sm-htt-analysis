@@ -68,6 +68,7 @@ def parse_arguments():
 def dictToString(exdict):
     return str(["{} : {}".format(key, value) for key, value in sorted(exdict.items(), key=lambda x: str(x[1]))])
 
+# Function to merge two dicts
 def merge(a, b, path=None):
     "merges b into a"
     if path is None: path = []
@@ -86,6 +87,7 @@ def merge(a, b, path=None):
 def main(args):
     print(args)
     folds = ["0", "1"]
+    # Create dict containing containing the files, datasets and classes of all processes
     all_dict = {
         process: {
             "config_file": "{process}_datashard_config.yaml".format(process=process),
@@ -93,14 +95,12 @@ def main(args):
             "class": {}
         } for process in args.processes
     }
-
+    # Add sum of weights to dict for all processes
     for process in args.processes:
         logger.info("Process training datasets %s.", all_dict[process]["datasets"])
         f = [ROOT.TFile("{}/{}".format(args.dataset_dir, filename)) for filename in all_dict[process]["datasets"]]
         with open(args.dataset_dir + "/" +all_dict[process]["config_file"], "r") as f_dict:
             process_dict = yaml.load(f_dict, Loader=yaml.SafeLoader)
-        # print(all_dict[process])
-        # print(process_dict["processes"][process]["class"])
         class_name = process_dict["processes"][process]["class"]
         all_dict[process]["class"] = class_name
         sum_ = 0.0
@@ -116,6 +116,7 @@ def main(args):
         all_dict[process]["weight"] = sum_
 
     mass_batch_dict = {}
+    # Loop over all valid mass/batch combinations
     for mass in args.masses:
         mass_batch_dict[mass] = {}
         for batch in args.batches:
@@ -132,6 +133,7 @@ def main(args):
             out_file = args.dataset_dir +"_{}_{}/training_config.yaml".format(
                 mass, batch
             )
+            # get list of processes and their classes used for the mass/batch
             mass_batch_processes, mass_batch_classes = zip(*get_processes(
                 channel=args.channel,
                 mass=mass,
@@ -139,10 +141,10 @@ def main(args):
                 training_z_estimation_method="emb",
                 training_jetfakes_estimation_method="ff"
             ))
+            # Get subset dict, that only contains processes for the current mass/batch
             subset_dict = {process: all_dict[process] for process in mass_batch_processes}
-            print(subset_dict)
-            # exit(1)
 
+            # Merge the dicts for all used shards
             data_dicts = []
             for key in subset_dict:
                 data_dict_path = "{}/{}".format(args.dataset_dir, subset_dict[key]["config_file"])
@@ -151,8 +153,6 @@ def main(args):
 
             ### use the classes that have processes mapped to them
             classes = set(mass_batch_classes)
-            print(classes)
-            # classes = set([dsConfDict["processes"][key]["class"] for key in list(dsConfDict["processes"].keys())])
 
             if args.training_template == None:
                 args.training_template= "ml/templates/{}_{}_training.yaml".format(args.era, args.channel)
@@ -216,7 +216,6 @@ def main(args):
                     logger.warning("Training classes in {} and {} differ".format(
                         out_file, args.training_template
                     ))
-                #exit 1
 
             ## Merge dicts "classes" and "class_weights" are overwritten
             ## Anything provided by the "--overwrite-configs" argument has priority
@@ -227,7 +226,6 @@ def main(args):
                 else:
                     mergeddict[key] = trainingTemplateDict[key]
             mergeddict["processes"] = list(dsConfDict["processes"].keys())
-
             if args.overwrite_configs:
                 logger.info("Given overwrite values:")
                 logger.info(args.overwrite_configs)

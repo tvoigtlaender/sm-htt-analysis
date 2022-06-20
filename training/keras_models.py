@@ -138,6 +138,7 @@ def smhtt_dropout(num_inputs, num_outputs):
     return model
 
 
+# Model used by Janek Bechtel in his thesis
 def smhtt_dropout_tanh(num_inputs, num_outputs, node_num=200, layer_num=2):
     model = Sequential()
 
@@ -159,6 +160,7 @@ def smhtt_dropout_tanh(num_inputs, num_outputs, node_num=200, layer_num=2):
                   weighted_metrics=["mean_squared_error"])
     return model
 
+# Model used by Tim Voigtländer in his thesis
 def smhtt_dropout_tanh_GPU(num_inputs, num_outputs, node_num=512, layer_num=3):
     model = Sequential()
 
@@ -178,29 +180,6 @@ def smhtt_dropout_tanh_GPU(num_inputs, num_outputs, node_num=512, layer_num=3):
                   optimizer=Adam(learning_rate=1e-4),
                   weighted_metrics=["mean_squared_error"])
     return model
-
-
-def smhtt_dropout_tanh_large(num_inputs, num_outputs):
-    model = Sequential()
-
-    for i, nodes in enumerate([512] * 4):
-        if i == 0:
-            model.add(
-                Dense(nodes, kernel_regularizer=l2(1e-5),
-                      input_dim=num_inputs))
-        else:
-            model.add(Dense(nodes, kernel_regularizer=l2(1e-5)))
-        model.add(Activation("tanh"))
-        model.add(Dropout(0.3))
-
-    model.add(Dense(num_outputs, kernel_regularizer=l2(1e-5)))
-    model.add(Activation("softmax", dtype="float32"))
-
-    model.compile(loss="categorical_crossentropy",
-                  optimizer=Adam(learning_rate=1e-4),
-                  weighted_metrics=["mean_squared_error"])
-    return model
-
 
 def smhtt_dropout_tanh_tensorflow(input_placeholder, keras_model):
     weights = {}

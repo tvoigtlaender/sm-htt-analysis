@@ -70,6 +70,7 @@ fi
 
 ARTUS_FRIENDS_FAKE_FACTOR=$FF_Friends
 
+#Export everything
 export KAPPA_DATABASE
 export ARTUS_OUTPUTS
 export NNScore_Friends

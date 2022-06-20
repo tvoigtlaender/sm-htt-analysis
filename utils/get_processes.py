@@ -172,6 +172,7 @@ def main(channel, mass, batch, training_z_estimation_method, training_jetfakes_e
         else:
             process_dict["QCD"] = "ss"
 
+    # return list of (process, class) tuples of all processes used for the analysis
     return [(process, process_dict[process]) for process in process_dict]
     
 if __name__ == "__main__":

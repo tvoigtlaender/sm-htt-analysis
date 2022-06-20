@@ -34,13 +34,13 @@ def parse_arguments():
         "--processes",
         nargs='+',
         default=[],
-        help="Process of which the config will be created."
+        help="Processes of which the configs will be created."
     )
     parser.add_argument(
         "--process-classes",
         nargs='+',
         default=[],
-        help="Class of process of which the config will be created."
+        help="Class of processes of which the configs will be created."
     )
     parser.add_argument(
         "--base-path", 
@@ -87,14 +87,14 @@ def main(args):
         len(args.processes),len(args.process_classes)
     )
     output_config = {}
+    # Gather configs regarding ntuple/friend data
     output_config["base_path"] = args.base_path.format(channel=args.channel)
     output_config["friend_paths"] = [path.format(channel=args.channel) for path in args.friend_paths]
     output_config["event_branch"] = args.event_branch
     output_config["training_weight_branch"] = args.training_weight_branch
     output_config["tree_path"] = args.tree_path
 
-    # print(output_config)
-
+    # Load estimation methods and database dependant on run era
     if "2016" in args.era:
         import shape_producer.estimation_methods_2016 as estimation_methods
         from shape_producer.era import Run2016
@@ -110,12 +110,13 @@ def main(args):
         from shape_producer.era import Run2018
         era = Run2018(args.database)
 
+    # Load channel objects dependant on era and decay channel
     channelDict = {}
     channelDict["2016"] = {"mt": MTSM2016(), "et": ETSM2016(), "tt": TTSM2016(), "em": EMSM2016()}
     channelDict["2017"] = {"mt": MTSM2017(), "et": ETSM2017(), "tt": TTSM2017(), "em": EMSM2017()}
     channelDict["2018"] = {"mt": MTSM2018(), "et": ETSM2018(), "tt": TTSM2018(), "em": EMSM2018()}
     
-    
+    # Loop over all requested processes
     for process, process_class in zip(args.processes, args.process_classes):
         logger.info("Channel: {}, Era: {}, Process: {}".format(args.channel, args.era, process))
         

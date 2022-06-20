@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Add all python scripts/modules of sm-htt-analysis to PYTHONPATH
 STARTING_PATH=$(realpath $(dirname $(dirname ${BASH_SOURCE[0]})))
 export PYTHONPATH=$PYTHONPATH:$STARTING_PATH/shape-producer
 export PYTHONPATH=$PYTHONPATH:$STARTING_PATH/datacard-producer

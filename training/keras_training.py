@@ -194,27 +194,26 @@ def main(args, config):
     w = []  # Weights for training
     z = []  # Era information for batching
     for i_era, era in enumerate(eras):
+        # Get the datashards of all processes listed in the training config file 
         if conditional:
             filenames = ["{}/{}/{}_datashard_fold{}.root".format(args.data_dir, era, process, args.fold) for process in processes]
         else:
             filenames = ["{}/{}/{}_datashard_fold{}.root".format(args.data_dir, args.era_training, process, args.fold) for process in processes]
             # filename = config["datasets"][args.fold]
         logger.debug("Load training dataset from {}.".format(filenames))
-        # rfile = ROOT.TFile(filename, "READ")
         upfiles = [uproot.open(filename) for filename in filenames]
         x_era = []
         y_era = []
         w_era = []
         for i_class, class_ in enumerate(classes):
             logger.debug("Process class %s.", class_)
-            # tree = rfile.Get(class_)
             uptrees = [upfile[class_] for upfile in upfiles if class_ in upfile.keys()[0]]
             if not uptrees:
                 logger.fatal("Tree %s not found in files %s.", class_,
                                 filenames)
                 raise Exception
 
-            # Get inputs for this class
+            # Get inputs for this class from all shards
             class_num_entries = np.sum([uptree.num_entries for uptree in uptrees])
             x_class = np.zeros(
                 (class_num_entries, len(variables) + len_eras))
@@ -248,7 +247,7 @@ def main(args, config):
                         x_class[:, -1] = np.ones((class_num_entries))
             x_era.append(x_class)
 
-            # Get weights
+            # Get weights from all shards
             w_class = np.zeros((class_num_entries, 1))
             w_conv = []
             for uptree in uptrees:
