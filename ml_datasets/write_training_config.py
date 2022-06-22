@@ -97,7 +97,7 @@ def main(args):
     }
     # Add sum of weights to dict for all processes
     for process in args.processes:
-        logger.info("Process training datasets %s.", all_dict[process]["datasets"])
+        logger.info("Process datasets %s.", all_dict[process]["datasets"])
         f = [ROOT.TFile("{}/{}".format(args.dataset_dir, filename)) for filename in all_dict[process]["datasets"]]
         with open(args.dataset_dir + "/" +all_dict[process]["config_file"], "r") as f_dict:
             process_dict = yaml.load(f_dict, Loader=yaml.SafeLoader)
@@ -120,10 +120,18 @@ def main(args):
     for mass in args.masses:
         mass_batch_dict[mass] = {}
         for batch in args.batches:
-            if int(mass) <= 1000:
+            if mass in [240,280]:
+                max_batch = 3
+            elif mass in [320,360,400,450]:
+                max_batch = 4
+            elif mass in [500,550,600]:
+                max_batch = 5
+            elif mass in [700,800,"heavier"]:
+                max_batch = 6
+            elif mass in [900,1000]:
                 max_batch = 7
             else:
-                max_batch = 6
+                raise Exception("Provided mass {} is not valid.".format(mass))
             if int(batch) > max_batch:
                 continue
 
@@ -242,7 +250,7 @@ def main(args):
             logger.info( "{}-{}: Resulting training configs".format(args.era, args.channel))
             print(dictToString({key: value for key, value in mergeddict.items() if key != "processes"}))
 
-            logger.info( "{}-{}: Class weights after update: {}".format(args.era, args.channel,dictToString(trainingTemplateDict["class_weights"])))
+            logger.info( "{}-{}: Class weights after update: {}".format(args.era, args.channel,dictToString(mergeddict["class_weights"])))
 
 
 if __name__ == "__main__":

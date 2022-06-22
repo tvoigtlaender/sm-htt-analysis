@@ -66,10 +66,22 @@ def main(channel, mass, batch, training_z_estimation_method, training_jetfakes_e
     process_dict = {}
 
     #NMSSM processes
-    mass = int(mass)
     batch = int(batch)
     batches = {}
-    if mass<=1000:
+    if mass == "heavier":
+        heavy_masses = [1200,1400,1600,1800,2000,2500,3000]
+        batches[1] = [60, 70, 80, 90, 100]
+        batches[2] = [120, 150, 170, 190, 250, 300]
+        batches[3] = [350, 400, 450, 500, 550, 600, 650, 700]
+        batches[4] = [800, 900, 1000, 1100, 1200]
+        batches[5] = [1300, 1400, 1600, 1800]
+        batches[6] = [2000, 2200, 2400, 2600, 2800]
+        for heavy_mass in heavy_masses:
+            light_masses = [val for val in batches[batch] if val+125<heavy_mass]
+            for light_mass in light_masses:
+                process_dict["NMSSM_{}_125_{}".format(heavy_mass, light_mass)] \
+                    = "NMSSM_MH{}_{}".format(heavy_mass, batch)
+    else:
         batches[1] = [60, 70, 75, 80]
         batches[2] = [85, 90, 95, 100]
         batches[3] = [110, 120, 130, 150]
@@ -77,18 +89,11 @@ def main(channel, mass, batch, training_z_estimation_method, training_jetfakes_e
         batches[5] = [350, 400, 450, 500]
         batches[6] = [550, 600, 650, 700]
         batches[7] = [750, 800, 850]
-    else:
-        batches[1] = [60, 70, 80, 90, 100]
-        batches[2] = [120, 150, 170, 190, 250, 300]
-        batches[3] = [350, 400, 450, 500, 550, 600, 650, 700]
-        batches[4] = [800, 900, 1000, 1100, 1200]
-        batches[5] = [1300, 1400, 1600, 1800]
-        batches[6] = [2000, 2200, 2400, 2600, 2800]
-    light_masses = [val for val in batches[batch] if val+125<mass]
-    for light_mass in light_masses:
-        process_dict[
-            "NMSSM_{}_125_{}".format(mass, light_mass)
-        ] = "NMSSM_MH{}_{}".format(mass, batch)
+        light_masses = [val for val in batches[batch] if val+125<int(mass)]
+        for light_mass in light_masses:
+            process_dict[
+                "NMSSM_{}_125_{}".format(mass, light_mass)
+            ] = "NMSSM_MH{}_{}".format(mass, batch)
 
     #EWKZ process
     process_dict["EWKZ"] = "misc"
