@@ -120,15 +120,16 @@ def main(args):
     for mass in args.masses:
         mass_batch_dict[mass] = {}
         for batch in args.batches:
-            if mass in [240,280]:
+            mass = str(mass)
+            if mass in ["240", "280"]:
                 max_batch = 3
-            elif mass in [320,360,400,450]:
+            elif mass in ["320", "360", "400", "450"]:
                 max_batch = 4
-            elif mass in [500,550,600]:
+            elif mass in ["500", "550", "600"]:
                 max_batch = 5
-            elif mass in [700,800,"heavier"]:
+            elif mass in ["700", "800", "heavier"]:
                 max_batch = 6
-            elif mass in [900,1000]:
+            elif mass in ["900", "1000"]:
                 max_batch = 7
             else:
                 raise Exception("Provided mass {} is not valid.".format(mass))
