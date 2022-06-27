@@ -55,6 +55,7 @@ def parse_arguments():
     parser.add_argument("--masses",nargs='+', required=True, help="Analysis channel")
     parser.add_argument("--batches",nargs='+', required=True, help="Analysis channel")
     parser.add_argument("--dataset-dir", type=str,required=True, help="Path to training datasets directory.")
+    parser.add_argument("--config-dir", type=str,required=True, help="Path to training datasets directory.")
 
     parser.add_argument("--processes",nargs='+', type=str,required=True, help="List of datashards files")
     parser.add_argument("--training-template", type=str,required=False, help="Specifies the config file setting the model, used variables...")
@@ -98,8 +99,8 @@ def main(args):
     # Add sum of weights to dict for all processes
     for process in args.processes:
         logger.info("Process datasets %s.", all_dict[process]["datasets"])
-        f = [ROOT.TFile("{}/{}".format(args.dataset_dir, filename)) for filename in all_dict[process]["datasets"]]
-        with open(args.dataset_dir + "/" +all_dict[process]["config_file"], "r") as f_dict:
+        f = [ROOT.TFile.Open("{}/{}".format(args.dataset_dir, filename), "READ") for filename in all_dict[process]["datasets"]]
+        with open(args.config_dir + "/" +all_dict[process]["config_file"], "r") as f_dict:
             process_dict = yaml.load(f_dict, Loader=yaml.SafeLoader)
         class_name = process_dict["processes"][process]["class"]
         all_dict[process]["class"] = class_name
@@ -139,7 +140,7 @@ def main(args):
             logger.info("Processing era {}, channel {}, mass {}, batch {}".format(
                 args.era, args.channel, mass, batch
             ))
-            out_file = args.dataset_dir +"_{}_{}/training_config.yaml".format(
+            out_file = args.config_dir +"_{}_{}/training_config.yaml".format(
                 mass, batch
             )
             # get list of processes and their classes used for the mass/batch
@@ -156,7 +157,7 @@ def main(args):
             # Merge the dicts for all used shards
             data_dicts = []
             for key in subset_dict:
-                data_dict_path = "{}/{}".format(args.dataset_dir, subset_dict[key]["config_file"])
+                data_dict_path = "{}/{}".format(args.config_dir, subset_dict[key]["config_file"])
                 data_dicts.append(yaml.load(open(data_dict_path, "r"), Loader=yaml.SafeLoader))
             dsConfDict = reduce(merge, data_dicts)
 

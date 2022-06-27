@@ -25,8 +25,10 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Train machine Keras models for Htt analyses")
     parser.add_argument("--data-dir", help="Dir of training config file and datashards")
+    parser.add_argument("--config-dir", help="Dir of training config file and datashards")
     parser.add_argument("--fold", type=int, help="Select the fold to be trained")
     parser.add_argument("--era-training", help="Era of training (2016,2017,2018 or all_eras)")
+    parser.add_argument("--channel-training", help="Era of training (2016,2017,2018 or all_eras)")
     parser.add_argument(
         "--randomization",
         required=False,
@@ -92,7 +94,7 @@ def main(args, config):
         conditional = True
     else:
         conditional = False
-    output_dir = "/".join([args.data_dir, args.era_training])
+    output_dir = "/".join([args.config_dir, args.era_training])
     # Set seed and import packages
     # NOTE: This need to be done before any keras module is imported!
     logger.debug("Import packages and set random seed to %s.",
@@ -196,10 +198,11 @@ def main(args, config):
     for i_era, era in enumerate(eras):
         # Get the datashards of all processes listed in the training config file 
         if conditional:
-            filenames = ["{}/{}/{}_datashard_fold{}.root".format(args.data_dir, era, process, args.fold) for process in processes]
+            filenames = ["{}/{}_{}/{}_datashard_fold{}.root".format(args.data_dir, era, args.channel_training, process, args.fold) for process in processes]
         else:
-            filenames = ["{}/{}/{}_datashard_fold{}.root".format(args.data_dir, args.era_training, process, args.fold) for process in processes]
+            filenames = ["{}/{}_{}/{}_datashard_fold{}.root".format(args.data_dir, args.era_training, args.channel_training, process, args.fold) for process in processes]
             # filename = config["datasets"][args.fold]
+        print(filenames)
         logger.debug("Load training dataset from {}.".format(filenames))
         upfiles = [uproot.open(filename) for filename in filenames]
         x_era = []
@@ -769,7 +772,7 @@ def main(args, config):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    config_path = "{}/training_config.yaml".format(args.data_dir)
+    config_path = "{}/training_config.yaml".format(args.config_dir)
     config = parse_config(config_path)
     setup_logging(logging.INFO)
     main(args, config)

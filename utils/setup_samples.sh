@@ -13,30 +13,34 @@ fi
 # Kappa database
 KAPPA_DATABASE=datasets/datasets.json
 
+# local_path="/ceph/jbechtel/nmssm"
+remote_path="root://cmsxrootd-kit.gridka.de//store/user/tvoigtlaender/datasets/nmssm"
+base_path=$remote_path
+
 #### ERA specific part. If a sample is not available comment it out here.
 # Samples Run2016
-ARTUS_OUTPUTS_2016="/ceph/jbechtel/nmssm/ntuples/2016/{channel}/"
-SVFit_Friends_2016="/ceph/jbechtel/nmssm/friends/2016/{channel}/SVFit/"
-FF_Friends_2016="/ceph/jbechtel/nmssm/friends/2016/{channel}/FakeFactors_nmssm/"
-HHKinFit_Friends_2016="/ceph/jbechtel/nmssm/friends/2016/{channel}/HHKinFit/"
-#NNScore_Friends_2016="/ceph/jbechtel/nmssm/friends/2016/+CH+/NNScore_nmssm_v5/NNScore_workdir/NNScore_collected/"
-NNScore_Friends_2016="/ceph/jbechtel/nmssm/friends/2016/+CH+/NNScore_train_all/NNScore_workdir/+MASS+_+BATCH+/NNScore_workdir/NNScore_collected/"
+ARTUS_OUTPUTS_2016="${base_path}/ntuples/2016/{channel}/"
+SVFit_Friends_2016="${base_path}/friends/2016/{channel}/SVFit/"
+FF_Friends_2016="${base_path}/friends/2016/{channel}/FakeFactors_nmssm/"
+HHKinFit_Friends_2016="${base_path}/friends/2016/{channel}/HHKinFit/"
+#NNScore_Friends_2016="${base_path}/friends/2016/+CH+/NNScore_nmssm_v5/NNScore_workdir/NNScore_collected/"
+NNScore_Friends_2016="${base_path}/friends/2016/+CH+/NNScore_train_all/NNScore_workdir/+MASS+_+BATCH+/NNScore_workdir/NNScore_collected/"
 
 # Samples Run2017
-ARTUS_OUTPUTS_2017="/ceph/jbechtel/nmssm/ntuples/2017/{channel}/"
-SVFit_Friends_2017="/ceph/jbechtel/nmssm/friends/2017/{channel}/SVFit/"
-FF_Friends_2017="/ceph/jbechtel/nmssm/friends/2017/{channel}/FakeFactors_nmssm/"
-HHKinFit_Friends_2017="/ceph/jbechtel/nmssm/friends/2017/{channel}/HHKinFit/"
-#NNScore_Friends_2017="/ceph/jbechtel/nmssm/friends/2017/+CH+/NNScore_nmssm_v5/NNScore_workdir/NNScore_collected/"
-NNScore_Friends_2017="/ceph/jbechtel/nmssm/friends/2017/+CH+/NNScore_train_all/NNScore_workdir/+MASS+_+BATCH+/NNScore_workdir/NNScore_collected/"
+ARTUS_OUTPUTS_2017="${base_path}/ntuples/2017/{channel}/"
+SVFit_Friends_2017="${base_path}/friends/2017/{channel}/SVFit/"
+FF_Friends_2017="${base_path}/friends/2017/{channel}/FakeFactors_nmssm/"
+HHKinFit_Friends_2017="${base_path}/friends/2017/{channel}/HHKinFit/"
+#NNScore_Friends_2017="${base_path}/friends/2017/+CH+/NNScore_nmssm_v5/NNScore_workdir/NNScore_collected/"
+NNScore_Friends_2017="${base_path}/friends/2017/+CH+/NNScore_train_all/NNScore_workdir/+MASS+_+BATCH+/NNScore_workdir/NNScore_collected/"
 
 # Samples Run2018
-ARTUS_OUTPUTS_2018="/ceph/jbechtel/nmssm/ntuples/2018/{channel}/"
-SVFit_Friends_2018="/ceph/jbechtel/nmssm/friends/2018/{channel}/SVFit/"
-FF_Friends_2018="/ceph/jbechtel/nmssm/friends/2018/{channel}/FakeFactors_nmssm/"
-HHKinFit_Friends_2018="/ceph/jbechtel/nmssm/friends/2018/{channel}/HHKinFit/"
-#NNScore_Friends_2018="/ceph/jbechtel/nmssm/friends/2018/+CH+/NNScore_nmssm_v5/NNScore_workdir/NNScore_collected/"
-NNScore_Friends_2018="/ceph/jbechtel/nmssm/friends/2018/+CH+/NNScore_train_all/NNScore_workdir/+MASS+_+BATCH+/NNScore_workdir/NNScore_collected/"
+ARTUS_OUTPUTS_2018="${base_path}/ntuples/2018/{channel}/"
+SVFit_Friends_2018="${base_path}/friends/2018/{channel}/SVFit/"
+FF_Friends_2018="${base_path}/friends/2018/{channel}/FakeFactors_nmssm/"
+HHKinFit_Friends_2018="${base_path}/friends/2018/{channel}/HHKinFit/"
+#NNScore_Friends_2018="${base_path}/friends/2018/+CH+/NNScore_nmssm_v5/NNScore_workdir/NNScore_collected/"
+NNScore_Friends_2018="${base_path}/friends/2018/+CH+/NNScore_train_all/NNScore_workdir/+MASS+_+BATCH+/NNScore_workdir/NNScore_collected/"
 
 
 # ERA handling

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from XRootD import client
+from XRootD.client.flags import QueryCode
 import ROOT
 
 ROOT.PyConfig.IgnoreCommandLineOptions = True  # disable ROOT internal argument parser
@@ -8,16 +10,30 @@ import argparse
 import yaml
 import os
 from array import array
+from re import findall
+import os
 
 import logging
 
-logger = logging.getLogger("create_training_dataset")
+logger = logging.getLogger("create_training_datashard")
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+def check_if_remote_file_exists(fullpath):
+    client_path = findall('(root://.*/)/', fullpath)[0]
+    file_path = findall('root://.*/(/.*)', fullpath)[0]
+    myclient = client.FileSystem(client_path)
+    status, response = myclient.query(QueryCode.CHECKSUM, file_path, timeout=10)
+    if status == '':
+        logger.fatal("XRootD checksum query did not respond")
+        raise Exception
+    if status.status == 0:
+        return 1
+    else:
+        return 0
 
 def parse_arguments():
     logger.debug("Parse arguments.")
@@ -52,17 +68,23 @@ def main(args, config):
 
     # for each file, add ntuple TTree to the chain and do the same for the the friendTrees
     for filename in config["processes"][args.process]["files"]:
-        path = os.path.join(config["base_path"], filename)
-        if not os.path.isfile(path):
+        path = os.path.join(config["base_path"], filename )
+        if not check_if_remote_file_exists(path):
             logger.fatal("File does not exist: {}".format(path))
             raise Exception
+        else:
+            logger.debug("File {} exists.".format(path))
+
         chain.AddFile(path)
         # Make sure, that friend files are put in the same order together
         for friendPath in config["friend_paths"]:
             friendFileName = os.path.join(friendPath, filename)
-            if not os.path.isfile(friendFileName):
+            if not check_if_remote_file_exists(friendFileName):
                 logger.fatal("File does not exist: {}".format(friendFileName))
                 raise Exception
+            else:
+                logger.debug("File {} exists.".format(friendFileName))
+
             friendTreeName = os.path.basename(os.path.normpath(friendPath))
             logger.debug(
                 "Attaching friendtree for {}, filename{}".format(
@@ -70,7 +92,6 @@ def main(args, config):
                 )
             )
             friendchains[friendTreeName].AddFile(friendFileName)
-
     logger.debug("Joining TChains")
     for friendTreeName in friendchains.keys():
         logger.debug("Adding to mainchain: {}".format(friendTreeName))
