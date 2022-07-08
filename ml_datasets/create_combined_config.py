@@ -15,7 +15,7 @@ import os
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Sum training weights of classes in training dataset.")
-    parser.add_argument("--input-base-path", required=False, help="Base path of inputs.")
+    parser.add_argument("--input-path", required=False, help="Base path of inputs.")
     parser.add_argument("--output-dir", type=str,required=True, help="Output directory of this script")
     return parser.parse_args()
 
@@ -24,7 +24,7 @@ def main(args):
     configs = []
     # Load training config files for all eras
     for era in eras:
-        config_path = "{}/{}/training_config.yaml".format(args.input_base_path, era)
+        config_path = args.input_path.format(era=era) + "/training_config.yaml"
         logger.info("Try to open {}".format(config_path))
         config = yaml.load(open(config_path, 'r'), Loader =yaml.SafeLoader)
         configs.append(config)
@@ -40,10 +40,10 @@ def main(args):
             # Use configs of first era
             all_era_template[key] = configs[0][key]
 
-    if not os.path.exists(args.output_dir + "/all_eras"):
-        os.mkdir(args.output_dir + "/all_eras")
+    if not os.path.exists(args.output_dir):
+        os.mkdir(args.output_dir)
 
-    output_file = args.output_dir + "/all_eras/training_config.yaml"
+    output_file = args.output_dir + "/training_config.yaml"
 
     logger.info("Writing new dataset config for all eras to {}".format(output_file))
     # Save merged config files
