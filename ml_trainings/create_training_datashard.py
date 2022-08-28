@@ -39,7 +39,8 @@ def parse_arguments():
     logger.debug("Parse arguments.")
     parser = argparse.ArgumentParser(description="Create training dataset")
     parser.add_argument("--config", help="Datashard config file")
-    parser.add_argument("--process", help="Process of datashard")
+    parser.add_argument("--training-class", help="Training class of datashard")
+    parser.add_argument("--identifier", help="Identifier of datashard")
     parser.add_argument("--fold", help="Fold of datashard (0 or 1)")
     parser.add_argument("--output-dir", help="Root file created by this script")
     return parser.parse_args()
@@ -51,12 +52,17 @@ def parse_config(filename):
 
 
 def main(args, config):
-    logger.info(args.process)
-    logger.debug("Collect events of process {} for fold {}.".format(args.process, args.fold))
+    logger.info(config["process"])
+    logger.debug("Collect events of process {} for fold {}.".format(config["process"], args.fold))
 
     # Create output file
     output_filename = os.path.join(
-        args.output_dir, "{}_datashard_fold{}.root".format(args.process, args.fold)
+        args.output_dir, 
+        "{identifier}_{training_class}_datashard_fold{fold}.root".format(
+            identifier=args.identifier, 
+            training_class=args.training_class,
+            fold=args.fold,
+        ),
     )
 
     # Collect all files for this process in a chain. Create also chains for friend files
@@ -67,9 +73,10 @@ def main(args, config):
         friendchains[friendTreeName] = ROOT.TChain(config["tree_path"])
 
     # for each file, add ntuple TTree to the chain and do the same for the the friendTrees
-    for filename in config["processes"][args.process]["files"]:
+    for filename in config["files"]:
         path = os.path.join(config["base_path"], filename )
-        if not check_if_remote_file_exists(path):
+        # if not check_if_remote_file_exists(path):
+        if not os.path.exists(path):
             logger.fatal("File does not exist: {}".format(path))
             raise Exception
         else:
@@ -79,7 +86,8 @@ def main(args, config):
         # Make sure, that friend files are put in the same order together
         for friendPath in config["friend_paths"]:
             friendFileName = os.path.join(friendPath, filename)
-            if not check_if_remote_file_exists(friendFileName):
+            # if not check_if_remote_file_exists(friendFileName):
+            if not os.path.exists(friendFileName):
                 logger.fatal("File does not exist: {}".format(friendFileName))
                 raise Exception
             else:
@@ -105,13 +113,13 @@ def main(args, config):
     if chain_numentries == 0:
         logger.fatal("Chain (before skimming) does not contain any events.")
         raise Exception
-    logger.info("Found {} events for process {}.".format(chain_numentries, args.process))
+    logger.info("Found {} events for process {}.".format(chain_numentries, config["process"]))
 
     # Skim the events with the cut string
     cut_string = "({EVENT_BRANCH}%2=={NUM_FOLD})&&({CUT_STRING})".format(
         EVENT_BRANCH=config["event_branch"],
         NUM_FOLD=args.fold,
-        CUT_STRING=config["processes"][args.process]["cut_string"],
+        CUT_STRING=config["cut_string"],
     )
     logger.debug("Skim events with cut string: {}".format(cut_string))
 
@@ -123,27 +131,27 @@ def main(args, config):
         raise Exception
     logger.debug(
         "Found {} events for process {} after skimming.".format(
-            chain_skimmed_numentries, args.process
+            chain_skimmed_numentries, config["process"]
         )
     )
 
-    # # Write training weight to new branch
+    # Write training weight to new branch
     logger.debug(
         "Add training weights with weight string: {}".format(
-            config["processes"][args.process]["weight_string"]
+            config["weight_string"]
         )
     )
     rdf = rdf.Define(
         config["training_weight_branch"],
-        "(float)(" + config["processes"][args.process]["weight_string"] + ")",
+        "(float)(" + config["weight_string"] + ")",
     )
 
     opt = ROOT.ROOT.RDF.RSnapshotOptions()
     opt.fMode = "RECREATE"
 
     logger.info("Creating output file: {}".format(output_filename))
-    rdf.Snapshot(config["processes"][args.process]["class"], output_filename, "^((?!nickname).)*$", opt)
-    logger.info("snapshot created for process {}!".format(args.process))
+    rdf.Snapshot(args.training_class, output_filename, "^((?!nickname).)*$", opt)
+    logger.info("snapshot created for process {}!".format(config["process"]))
 
 
 if __name__ == "__main__":
