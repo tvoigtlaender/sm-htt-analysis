@@ -101,7 +101,7 @@ def main(args):
     processes = merged_config["processes"]
     classes = merged_config["classes"]
     variables = merged_config["variables"]
-    weight_var = merged_config["event_weights"]
+    weight_var = "weight"
     log.debug("Used identifiers: {}".format(ids))
     log.debug("Used processes: {}".format(processes))
     log.debug("Used classes: {}".format(classes))

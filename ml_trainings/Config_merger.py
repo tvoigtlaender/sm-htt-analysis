@@ -145,41 +145,6 @@ def get_pvcm(config, t_name, recursion_list=[]):
         new_dict["mapping"] = t_config["mapping"]
     return new_dict
 
-
-# Function to collect information on other miscellaneous configs
-def get_misc(config, t_name, recursion_list=[]):
-    # Check for loops in recursive resolution
-    if t_name in recursion_list:
-        print(
-            "Loop found in recursive training definition! {} has already been called.".format(
-                t_name
-            )
-        )
-        raise Exception("Consistency error in training config.")
-    else:
-        tmp_list = recursion_list + [t_name]
-    t_config = config[t_name]
-    new_dict = {}
-    # List of miscellaneous parameters
-    misc_args = ["event_weights"]
-    if "composite" in t_config.keys() and t_config["composite"]:
-        for arg in misc_args:
-            usub_args = set(
-                [
-                    get_misc(config, train, tmp_list)[arg]
-                    for train in t_config["trainings"]
-                ]
-            )
-            if len(usub_args) != 1:
-                print("The {} of the sub-trainings are not equal!".format(arg))
-                raise Exception("consistency error in training config.")
-            new_dict[arg] = list(usub_args)[0]
-    else:
-        for arg in misc_args:
-            new_dict[arg] = t_config[arg]
-    return new_dict
-
-
 # Function to gather all retrieved merged configs
 def get_merged_config(config, t_name):
     new_config = {}
@@ -195,8 +160,4 @@ def get_merged_config(config, t_name):
     pvcm_conf = get_pvcm(config, t_name)
     for var in ["processes", "variables", "classes", "mapping"]:
         new_config[var] = pvcm_conf[var]
-    # Get misc parameters
-    misc_dict = get_misc(config, t_name)
-    for key in misc_dict.keys():
-        new_config[key] = misc_dict[key]
     return new_config
