@@ -2,6 +2,9 @@
 
 # Function to collect information on the process configs
 def get_id_configs(config, t_name, recursion_list=[]):
+
+    identifier_order = ["era", "channel"]
+
     # Check for loops in recursive resolution
     if t_name in recursion_list:
         print(
@@ -19,24 +22,16 @@ def get_id_configs(config, t_name, recursion_list=[]):
         id_path = []
         for sub_t in t_config["trainings"]:
             id_path += get_id_configs(config, sub_t, tmp_list)
-        # Check for identifiers with the same name, but different config dirs
-        unique_id_path = set(id_path)
-        ids, paths = zip(*unique_id_path)
-        if len(ids) != len(set(ids)):
-            print("Entry with same identifier, but different config dir found!")
-            data_found = []
-            for data in unique_id_path:
-                id_, path = data
-                if id_ in data_found:
-                    print("Identifier {} is affected.".format(id_))
-                else:
-                    data_found.append(id_)
-            raise Exception("Consistency error in training config.")
         # Return combined list of identifiers
         return list(id_path)
     else:
         # Create identifier from identification parameters
-        id_string = "_".join(t_config["identifier"].values())
+        ordered_paras = [
+            t_config["identifier"][para] 
+            for para in identifier_order 
+            if para in t_config["identifier"]
+        ]
+        id_string = "_".join(ordered_paras)
         # Return together with process config path
         return [(id_string, t_config["processes_config"])]
 
@@ -151,6 +146,7 @@ def get_pvcm(config, t_name, recursion_list=[]):
     return new_dict
 
 
+# Function to collect information on other miscellaneous configs
 def get_misc(config, t_name, recursion_list=[]):
     # Check for loops in recursive resolution
     if t_name in recursion_list:
@@ -184,17 +180,22 @@ def get_misc(config, t_name, recursion_list=[]):
     return new_dict
 
 
+# Function to gather all retrieved merged configs
 def get_merged_config(config, t_name):
     new_config = {}
+    # Get identification parameters
     new_config["parts"] = {}
     id_conf = get_id_configs(config, t_name)
     for entry in id_conf:
         identifier, path = entry
         new_config["parts"][identifier] = path
+    # Get ML training parameters
     new_config["model"] = get_model_configs(config, t_name)
+    # Get process, variables, training classes and mapping parameters
     pvcm_conf = get_pvcm(config, t_name)
     for var in ["processes", "variables", "classes", "mapping"]:
         new_config[var] = pvcm_conf[var]
+    # Get misc parameters
     misc_dict = get_misc(config, t_name)
     for key in misc_dict.keys():
         new_config[key] = misc_dict[key]

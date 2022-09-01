@@ -116,8 +116,7 @@ def main(args, config):
     logger.info("Found {} events for process {}.".format(chain_numentries, config["process"]))
 
     # Skim the events with the cut string
-    cut_string = "({EVENT_BRANCH}%2=={NUM_FOLD})&&({CUT_STRING})".format(
-        EVENT_BRANCH=config["event_branch"],
+    cut_string = "(event%2=={NUM_FOLD})&&({CUT_STRING})".format(
         NUM_FOLD=args.fold,
         CUT_STRING=config["cut_string"],
     )

@@ -1,30 +1,27 @@
 import argparse
 import logging as log
-
 log.basicConfig(
     format="Tensorflow_training - %(levelname)s - %(message)s", level=log.INFO
 )
 
 import os
-import yaml
-from ml_trainings.Config_merger import get_merged_config
-
-import numpy as np
-import tensorflow as tf
-import uproot
-import pandas as pd
-
-from sklearn import preprocessing, model_selection
-import pickle
-import Tensorflow_models
 import time
+import yaml
+import pickle
+
+import uproot
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from sklearn import preprocessing, model_selection
 
 import matplotlib as mpl
-
 mpl.use("Agg")
 mpl.rcParams["font.size"] = 16
 import matplotlib.pyplot as plt
 
+from ml_trainings.Config_merger import get_merged_config
+import Tensorflow_models
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Train ML network")
@@ -47,6 +44,7 @@ def main(args):
 
     log.info("Python inputs: {}".format(args))
     # Get combined config of training
+    
     with open(args.config_file, "r") as stream:
         config = yaml.safe_load(stream)
     merged_config = get_merged_config(config, args.training_name)
@@ -58,7 +56,7 @@ def main(args):
     tf.random.set_seed(int(model_config["seed"]))
     log.debug("Using Tensorflow {} from {}".format(tf.__version__, tf.__file__))
     # Set up CPU resources
-    if "OMP_NUM_THREADS" in os.environ:
+    if os.getenv("OMP_NUM_THREADS"):
         n_CPU_cores = int(os.environ["OMP_NUM_THREADS"])
     else:
         log.info("'OMP_NUM_THREADS' is not set. Defaulting to 12.")
@@ -99,6 +97,7 @@ def main(args):
         distribution_strategy = tf.distribute.get_strategy()
 
     ids = list(merged_config["parts"].keys())
+    num_id_inputs = len(ids) if len(ids) > 1 else 0
     processes = merged_config["processes"]
     classes = merged_config["classes"]
     variables = merged_config["variables"]
@@ -129,9 +128,9 @@ def main(args):
                 t_c=mapped_class,
                 fold=args.fold,
             )
-            if not os.path.exists(file_path):
-                log.error("File {} does not exist.".format(file_path))
-                raise Exception("File not found.")
+            # if not os.path.exists(file_path):
+            #     log.error("File {} does not exist.".format(file_path))
+            #     raise Exception("File not found.")
             log.debug("Reading {}".format(file_path))
             upfile = uproot.open(file_path)
             if mapped_class != upfile.keys()[0].split(";")[0]:
@@ -252,10 +251,11 @@ def main(args):
                     [full_data[id_][class_]["inputs"][var] for var in variables]
                 )
             )
-            # Add one-hot-encoding for the training identifiers
+            # Add one-hot-encoding for the training identifiers if there is more than one
             # (All 1 if only one identifier is used)
-            input_data = np.insert(input_data, len(ids) * [len(variables)], 0, axis=1)
-            input_data[:, len(variables) + i_id] = 1
+            if len(ids) > 1:
+                input_data = np.insert(input_data, len(ids) * [len(variables)], 0, axis=1)
+                input_data[:, len(variables) + i_id] = 1
 
             input_weights = full_data[id_][class_]["weights"]
 
@@ -360,7 +360,7 @@ def main(args):
     log.info("Train keras model {}.".format(model_config["name"]))
     with distribution_strategy.scope():
         model_impl = getattr(Tensorflow_models, model_config["name"])
-        model = model_impl(len(variables) + len(ids), len(classes))
+        model = model_impl(len(variables) + num_id_inputs, len(classes))
         # model.summary()
     log.info("Running on balanced batches.")
 
@@ -443,7 +443,7 @@ def main(args):
     # Signature consists of (input data, labels, weights)
     gen_output_signature = (
         tf.TensorSpec(
-            shape=(None, len(variables) + len(ids)),
+            shape=(None, len(variables) + num_id_inputs),
             dtype=tf.float64,
         ),
         tf.TensorSpec(
