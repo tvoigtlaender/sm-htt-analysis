@@ -37,18 +37,19 @@ def parse_arguments():
     )
     return parser.parse_args()
 
+def parse_config(file, name):
+    with open(file, "r") as stream:
+        config = yaml.safe_load(stream)
+    training_config = get_merged_config(config, name)
+    return training_config
 
-def main(args):
+def main(args, training_config):
     # Start setup timer
     time_setup_start = time.time()
-
     log.info("Python inputs: {}".format(args))
-    # Get combined config of training
-    
-    with open(args.config_file, "r") as stream:
-        config = yaml.safe_load(stream)
-    merged_config = get_merged_config(config, args.training_name)
-    model_config = merged_config["model"]
+
+    # Get config of training
+    model_config = training_config["model"]
     log.debug("Using the configs: {}".format(model_config))
 
     ## Set up of TensorFlow and Numpy
@@ -96,17 +97,16 @@ def main(args):
         log.info("No GPU found. Using only CPU.")
         distribution_strategy = tf.distribute.get_strategy()
 
-    ids = list(merged_config["parts"].keys())
+    ids = list(training_config["parts"].keys())
     num_id_inputs = len(ids) if len(ids) > 1 else 0
-    processes = merged_config["processes"]
-    classes = merged_config["classes"]
-    variables = merged_config["variables"]
+    processes = training_config["processes"]
+    classes = training_config["classes"]
+    variables = training_config["variables"]
     weight_var = "weight"
     log.debug("Used identifiers: {}".format(ids))
     log.debug("Used processes: {}".format(processes))
     log.debug("Used classes: {}".format(classes))
     log.debug("Used variables: {}".format(variables))
-    log.debug("Used weight branch: {}".format(weight_var))
     allowed_types = ["float", "int32_t"]
 
     full_data = {}
@@ -120,7 +120,7 @@ def main(args):
                 full_data[id_][class_]["inputs"][var] = []
         for process in processes:
             # Load datashard for this process
-            mapped_class = merged_config["mapping"][process]
+            mapped_class = training_config["mapping"][process]
             file_path = "{d_p}/{id}_{pr}_{t_c}_datashard_fold{fold}.root".format(
                 d_p=args.data_dir,
                 id=id_,
@@ -172,7 +172,7 @@ def main(args):
             if not full_data[id_][class_]["inputs"]:
                 log.error("Class {} of id {} has no samples.".format(class_, id_))
                 log.error(
-                    "The current mappings are: {}".format(merged_config["mapping"])
+                    "The current mappings are: {}".format(training_config["mapping"])
                 )
                 raise Exception("Invalid process mapping.")
             # Combine data of different processes in the same class
@@ -523,4 +523,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = parse_arguments()
-    main(args)
+    training_config = parse_config(args.config_file, args.training_name)
+    main(args, training_config)
