@@ -149,7 +149,9 @@ def main(args, config):
     opt.fMode = "RECREATE"
 
     logger.info("Creating output file: {}".format(output_filename))
-    rdf.Snapshot(args.training_class, output_filename, "^((?!nickname).)*$", opt)
+    # Save all variables that do NOT contain "__". Excludes all shifts.
+    saved_variables = "^((?!__).)*$"
+    rdf.Snapshot(args.training_class, output_filename, saved_variables, opt)
     logger.info("snapshot created for process {}!".format(config["process"]))
 
 
