@@ -107,7 +107,7 @@ def main(args, training_config):
     log.debug("Used processes: {}".format(processes))
     log.debug("Used classes: {}".format(classes))
     log.debug("Used variables: {}".format(variables))
-    allowed_types = ["float", "int32_t"]
+    allowed_types = ["float", "int32_t", "model"]
 
     full_data = {}
     for id_ in ids:
@@ -235,12 +235,12 @@ def main(args, training_config):
             "Preprocessing {} is not implemented.".format(model_config["preprocessing"])
         )
         raise Exception("Invalid config.")
-    path_scaler = "{}/fold{}_keras_preprocessing.pickle".format(
+    path_preprocessing = "{}/fold{}_keras_preprocessing.pickle".format(
         args.output_dir, args.fold
     )
-    log.info("Write preprocessing object to {}.".format(path_scaler))
+    log.info("Write preprocessing object to {}.".format(path_preprocessing))
     # Save preprocessing object
-    with open(path_scaler, "wb") as stream:
+    with open(path_preprocessing, "wb") as stream:
         pickle.dump(scaler, stream)
 
     for i_id, id_ in enumerate(ids):
