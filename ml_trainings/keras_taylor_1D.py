@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import logging as log
+
 log.basicConfig(
     format="Tensorflow_training - %(levelname)s - %(message)s", level=log.INFO
 )
@@ -14,8 +15,9 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from ml_trainings.Config_merger import get_merged_config
 import matplotlib as mpl
-mpl.use('Agg')
-mpl.rcParams['font.size'] = 16
+
+mpl.use("Agg")
+mpl.rcParams["font.size"] = 16
 import matplotlib.pyplot as plt
 
 
@@ -27,7 +29,8 @@ def parse_arguments():
     parser.add_argument("--data-dir", help="Dir of process datasets")
     parser.add_argument("--output-dir", help="Output directory of training")
     parser.add_argument(
-        "--num-events", help="Number of events in one chunk", 
+        "--num-events",
+        help="Number of events in one chunk",
         default="10 MB",
     )
     parser.add_argument(
@@ -44,11 +47,13 @@ def parse_arguments():
     )
     return parser.parse_args()
 
+
 def parse_config(file, name):
     with open(file, "r") as stream:
         config = yaml.safe_load(stream)
     training_config = get_merged_config(config, name)
     return training_config
+
 
 def create_plots(vars_, classes, fold, grad_mat, name):
     log.info("Write 1D taylor plot for {} fold {}.".format(name, fold))
@@ -56,31 +61,27 @@ def create_plots(vars_, classes, fold, grad_mat, name):
     axis = plt.gca()
     for i in range(grad_mat.shape[0]):
         for j in range(grad_mat.shape[1]):
-            axis.text(j + 0.5,
-                      i + 0.5,
-                      '{:.2f}'.format(grad_mat[i, j]),
-                      ha='center',
-                      va='center')
-    q = plt.pcolormesh(grad_mat, cmap='Wistia')
-    #cbar = plt.colorbar(q)
-    #cbar.set_label("mean(abs(Taylor coefficients))", rotation=270, labelpad=20)
-    plt.xticks(np.array(range(len(vars_))) + 0.5,
-               vars_,
-               rotation='vertical')
-    plt.yticks(np.array(range(len(classes))) + 0.5,
-               classes,
-               rotation='horizontal')
+            axis.text(
+                j + 0.5,
+                i + 0.5,
+                "{:.2f}".format(grad_mat[i, j]),
+                ha="center",
+                va="center",
+            )
+    q = plt.pcolormesh(grad_mat, cmap="Wistia")
+    # cbar = plt.colorbar(q)
+    # cbar.set_label("mean(abs(Taylor coefficients))", rotation=270, labelpad=20)
+    plt.xticks(np.array(range(len(vars_))) + 0.5, vars_, rotation="vertical")
+    plt.yticks(np.array(range(len(classes))) + 0.5, classes, rotation="horizontal")
     plt.xlim(0, len(vars_))
     plt.ylim(0, len(classes))
     output_path = os.path.join(
-        args.output_dir, 
-        "fold{}_keras_taylor_1D_{}".format(fold, name)
+        args.output_dir, "fold{}_keras_taylor_1D_{}".format(fold, name)
     )
     log.info("Save plot to {}.".format(output_path))
-    plt.savefig(output_path + ".png", bbox_inches='tight')
-    plt.savefig(output_path + ".pdf", bbox_inches='tight')
+    plt.savefig(output_path + ".png", bbox_inches="tight")
+    plt.savefig(output_path + ".pdf", bbox_inches="tight")
     plt.close()
-
 
 
 # Function to compute gradients of model answers in optimized graph mode
@@ -102,6 +103,7 @@ def get_gradients(model, samples, output_ind):
     grads = tf.vectorized_map(get_single_gradient, samples)
     return grads
 
+
 def main(rgs, training_config):
     ids = list(training_config["parts"].keys())
     num_id_inputs = len(ids) if len(ids) > 1 else 0
@@ -119,12 +121,11 @@ def main(rgs, training_config):
     for fold in folds:
         # Load scaler
         preprocessing_path = os.path.join(
-            args.model_dir,
-            "fold{fold}_keras_preprocessing.pickle".format(fold=fold)
+            args.model_dir, "fold{fold}_keras_preprocessing.pickle".format(fold=fold)
         )
         log.info("Load preprocessing {}.".format(preprocessing_path))
         with open(preprocessing_path, "rb") as stream:
-            scaler = pickle.load(stream , encoding="bytes")
+            scaler = pickle.load(stream, encoding="bytes")
         # Load trained model
         model_path = os.path.join(
             args.model_dir,
@@ -138,7 +139,9 @@ def main(rgs, training_config):
             gradients_intermediate = {}
             gradient_weights_intermediate = {}
             for class_ in classes:
-                gradients_intermediate[class_] = np.zeros(len(variables) + num_id_inputs)
+                gradients_intermediate[class_] = np.zeros(
+                    len(variables) + num_id_inputs
+                )
                 gradient_weights_intermediate[class_] = 0
             for process in processes:
                 # Load datashard for this process
@@ -166,9 +169,11 @@ def main(rgs, training_config):
                     )
                     raise Exception("Consistency error in Tensorflow training.")
                 N_entries = uproot.open(file_path)[mapped_class].num_entries
-                log.info("Process {} with class {} of fold {}:".format(
-                    process, mapped_class, fold
-                ))
+                log.info(
+                    "Process {} with class {} of fold {}:".format(
+                        process, mapped_class, fold
+                    )
+                )
                 log.info("Contains {} events.".format(N_entries))
                 for val_wei in uproot.iterate(
                     file_path,
@@ -181,14 +186,14 @@ def main(rgs, training_config):
                     log.info("Read chunk with {} events.".format(len(input_weights)))
                     # Apply preprocessing to input data
                     input_data = scaler.transform(
-                        np.transpose(
-                            [val_wei[var] for var in variables]
-                        )
+                        np.transpose([val_wei[var] for var in variables])
                     )
                     # Add one-hot-encoding for the training identifiers if there is more than one
                     # (All 1 if only one identifier is used)
                     if len(ids) > 1:
-                        input_data = np.insert(input_data, len(ids) * [len(variables)], 0, axis=1)
+                        input_data = np.insert(
+                            input_data, len(ids) * [len(variables)], 0, axis=1
+                        )
                         input_data[:, len(variables) + i_id] = 1
                     # Create one-hot-encoded labels for the training classes
                     input_labels = np.array(len(input_data) * [len(classes) * [0]])
@@ -205,26 +210,32 @@ def main(rgs, training_config):
                     # Concatenate new gradients/ abs of gradients to previous results
                     if args.no_abs:
                         gradients = np.concatenate(
-                            ([gradients_intermediate[mapped_class]], gradients), axis=0)
+                            ([gradients_intermediate[mapped_class]], gradients), axis=0
+                        )
                     else:
                         gradients = np.concatenate(
-                            ([gradients_intermediate[mapped_class]], np.abs(gradients)), axis=0)
+                            ([gradients_intermediate[mapped_class]], np.abs(gradients)),
+                            axis=0,
+                        )
                     # Concatenate new weights to previous weights
                     gradients_weights = np.concatenate(
-                        ([gradient_weights_intermediate[mapped_class]], input_weights), axis=0)
+                        ([gradient_weights_intermediate[mapped_class]], input_weights),
+                        axis=0,
+                    )
                     # Get new itermediate averages and weights
-                    gradients_intermediate[mapped_class] = np.average(gradients,
-                                                        weights=gradients_weights,
-                                                        axis=0)
-                    gradient_weights_intermediate[mapped_class] = np.sum(gradients_weights)
+                    gradients_intermediate[mapped_class] = np.average(
+                        gradients, weights=gradients_weights, axis=0
+                    )
+                    gradient_weights_intermediate[mapped_class] = np.sum(
+                        gradients_weights
+                    )
             all_gradient_weights[id_] = gradient_weights_intermediate
             all_gradients[id_] = gradients_intermediate
             matrix = np.vstack([gradients_intermediate[class_] for class_ in classes])
             # Normalize rows
             if not args.no_normalize:
                 for i_class, class_ in enumerate(classes):
-                    matrix[i_class, :] = matrix[i_class, :] / np.sum(
-                        matrix[i_class, :])
+                    matrix[i_class, :] = matrix[i_class, :] / np.sum(matrix[i_class, :])
             # Plot results
             if num_id_inputs:
                 vars_ = variables + ids
@@ -238,17 +249,12 @@ def main(rgs, training_config):
             for class_ in classes:
                 grad = [all_gradients[id_][class_] for id_ in ids]
                 wght = [all_gradient_weights[id_][class_] for id_ in ids]
-                gradients[class_] = np.average(
-                    grad,
-                    weights=wght,
-                    axis=0
-                )
+                gradients[class_] = np.average(grad, weights=wght, axis=0)
             matrix = np.vstack([gradients[class_] for class_ in classes])
             # Normalize rows
             if not args.no_normalize:
                 for i_class, class_ in enumerate(classes):
-                    matrix[i_class, :] = matrix[i_class, :] / np.sum(
-                        matrix[i_class, :])
+                    matrix[i_class, :] = matrix[i_class, :] / np.sum(matrix[i_class, :])
             # Plot results
             create_plots(vars_, classes, fold, matrix, args.training_name)
 

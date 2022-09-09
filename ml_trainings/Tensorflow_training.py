@@ -1,5 +1,6 @@
 import argparse
 import logging as log
+
 log.basicConfig(
     format="Tensorflow_training - %(levelname)s - %(message)s", level=log.INFO
 )
@@ -16,12 +17,14 @@ import tensorflow as tf
 from sklearn import preprocessing, model_selection
 
 import matplotlib as mpl
+
 mpl.use("Agg")
 mpl.rcParams["font.size"] = 16
 import matplotlib.pyplot as plt
 
 from ml_trainings.Config_merger import get_merged_config
 import Tensorflow_models
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Train ML network")
@@ -37,11 +40,13 @@ def parse_arguments():
     )
     return parser.parse_args()
 
+
 def parse_config(file, name):
     with open(file, "r") as stream:
         config = yaml.safe_load(stream)
     training_config = get_merged_config(config, name)
     return training_config
+
 
 def main(args, training_config):
     # Start setup timer
@@ -254,7 +259,9 @@ def main(args, training_config):
             # Add one-hot-encoding for the training identifiers if there is more than one
             # (All 1 if only one identifier is used)
             if len(ids) > 1:
-                input_data = np.insert(input_data, len(ids) * [len(variables)], 0, axis=1)
+                input_data = np.insert(
+                    input_data, len(ids) * [len(variables)], 0, axis=1
+                )
                 input_data[:, len(variables) + i_id] = 1
 
             input_weights = full_data[id_][class_]["weights"]

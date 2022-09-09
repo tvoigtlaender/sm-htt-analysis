@@ -1,5 +1,6 @@
 import argparse
 import logging as log
+
 log.basicConfig(
     format="Tensorflow_training - %(levelname)s - %(message)s", level=log.DEBUG
 )
@@ -7,12 +8,16 @@ from ml_trainings.Config_merger import get_merged_config
 import pickle
 import yaml
 import json
+
 # import copy
 
 from tensorflow.keras.models import load_model
 
+
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Export model for Htt analyses to .json format")
+    parser = argparse.ArgumentParser(
+        description="Export model for Htt analyses to .json format"
+    )
     parser.add_argument("--training-config", help="Path to training config file")
     parser.add_argument("--training-name", help="Name of training")
     parser.add_argument("--in-out-dir", help="Input and output directory of converter")
@@ -26,8 +31,9 @@ def parse_config(file, name):
     training_config = get_merged_config(config, name)
     return training_config
 
+
 def main(args, training_config):
-    
+
     ids = list(training_config["parts"].keys())
     num_id_inputs = len(ids) if len(ids) > 1 else 0
     processes = training_config["processes"]
@@ -45,9 +51,11 @@ def main(args, training_config):
 
     # Create template dictionary for variables.json
     variables_template = {
-        "class_labels" : classes,
-        "inputs" : [{"name" : variable, "offset" : 0.0, "scale" : 1.0} for variable in var_and_id]
-    } 
+        "class_labels": classes,
+        "inputs": [
+            {"name": variable, "offset": 0.0, "scale": 1.0} for variable in var_and_id
+        ],
+    }
     print(variables_template)
     work_dir = args.in_out_dir
     classifier_template = "{dir}/fold{fold}_keras_model.h5"
@@ -66,11 +74,14 @@ def main(args, training_config):
         f.write(model.to_json())
     # export scale & offsets vor variables
     tmp_variables = variables_template
-    for variable,offset,scale in zip(tmp_variables["inputs"],scaler.mean_,scaler.scale_): # NOTE: offsets & scales are in the same order as in config_training["variables"]
+    for variable, offset, scale in zip(
+        tmp_variables["inputs"], scaler.mean_, scaler.scale_
+    ):  # NOTE: offsets & scales are in the same order as in config_training["variables"]
         variable["offset"] = -offset
-        variable["scale"] = 1.0/scale
+        variable["scale"] = 1.0 / scale
     with open(variable_exports_template.format(dir=work_dir, fold=fold), "w") as f:
         f.write(json.dumps(tmp_variables))
+
 
 if __name__ == "__main__":
     args = parse_arguments()

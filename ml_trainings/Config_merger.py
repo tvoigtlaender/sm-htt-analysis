@@ -27,8 +27,8 @@ def get_id_configs(config, t_name, recursion_list=[]):
     else:
         # Create identifier from identification parameters
         ordered_paras = [
-            t_config["identifier"][para] 
-            for para in identifier_order 
+            t_config["identifier"][para]
+            for para in identifier_order
             if para in t_config["identifier"]
         ]
         id_string = "_".join(ordered_paras)
@@ -144,6 +144,7 @@ def get_pvcm(config, t_name, recursion_list=[]):
         new_dict["classes"] = t_config["classes"]
         new_dict["mapping"] = t_config["mapping"]
     return new_dict
+
 
 # Function to gather all retrieved merged configs
 def get_merged_config(config, t_name):

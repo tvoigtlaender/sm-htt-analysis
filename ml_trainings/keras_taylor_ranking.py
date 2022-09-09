@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import logging as log
+
 log.basicConfig(
     format="Tensorflow_training - %(levelname)s - %(message)s", level=log.INFO
 )
@@ -14,8 +15,9 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from ml_trainings.Config_merger import get_merged_config
 import matplotlib as mpl
-mpl.use('Agg')
-mpl.rcParams['font.size'] = 20
+
+mpl.use("Agg")
+mpl.rcParams["font.size"] = 20
 import matplotlib.pyplot as plt
 
 
@@ -27,7 +29,8 @@ def parse_arguments():
     parser.add_argument("--data-dir", help="Dir of process datasets")
     parser.add_argument("--output-dir", help="Output directory of training")
     parser.add_argument(
-        "--num-events", help="Number of events in one chunk", 
+        "--num-events",
+        help="Number of events in one chunk",
         default="1 MB",
     )
     parser.add_argument(
@@ -37,6 +40,7 @@ def parse_arguments():
         help="Do not use abs for metric.",
     )
     return parser.parse_args()
+
 
 def parse_config(file, name):
     with open(file, "r") as stream:
@@ -49,15 +53,12 @@ def create_plots(mean_deriv, class_deriv_weights, classes, deriv_ops_names, fold
     log.info("Write 1D taylor plot for {} fold {}.".format(name, fold))
     deriv_all = np.vstack([mean_deriv[class_] for class_ in classes])
     print(class_deriv_weights)
-    weights_all = np.hstack(
-        [[class_deriv_weights[class_]] for class_ in classes])
+    weights_all = np.hstack([[class_deriv_weights[class_]] for class_ in classes])
     print(weights_all)
     if args.no_abs:
         mean_deriv_all = np.average((deriv_all), weights=weights_all, axis=0)
     else:
-        mean_deriv_all = np.average(np.abs(deriv_all),
-                                    weights=weights_all,
-                                    axis=0)
+        mean_deriv_all = np.average(np.abs(deriv_all), weights=weights_all, axis=0)
     mean_deriv["all"] = mean_deriv_all
     # Get ranking
     ranking = {}
@@ -106,12 +107,11 @@ def create_plots(mean_deriv, class_deriv_weights, classes, deriv_ops_names, fold
     for class_ in classes + ["all"]:
         output_path = os.path.join(
             args.output_dir,
-            "fold{}_keras_taylor_ranking_{}_{}.txt".format(
-                fold, name, class_))
+            "fold{}_keras_taylor_ranking_{}_{}.txt".format(fold, name, class_),
+        )
         log.info("Save table to {}.".format(output_path))
         f = open(output_path, "w")
-        for rank, (label,
-                   score) in enumerate(zip(labels[class_], ranking[class_])):
+        for rank, (label, score) in enumerate(zip(labels[class_], ranking[class_])):
             f.write("{0:<4} : {1:<60} : {2:g}\n".format(rank, label, score))
 
     # # Write table
@@ -130,13 +130,10 @@ def create_plots(mean_deriv, class_deriv_weights, classes, deriv_ops_names, fold
     # Store results for combined metric in file
     output_yaml = []
     for names, score in zip(labels["all"], ranking["all"]):
-        output_yaml.append({
-            "variables": names.split(", "),
-            "score": float(score)
-        })
+        output_yaml.append({"variables": names.split(", "), "score": float(score)})
     output_path = os.path.join(
-        args.output_dir,
-        "fold{}_keras_taylor_ranking_{}.yaml".format(fold, name))
+        args.output_dir, "fold{}_keras_taylor_ranking_{}.yaml".format(fold, name)
+    )
     yaml.dump(output_yaml, open(output_path, "w"), default_flow_style=False)
     log.info("Save results to {}.".format(output_path))
 
@@ -147,8 +144,7 @@ def create_plots(mean_deriv, class_deriv_weights, classes, deriv_ops_names, fold
         ranks_2d = []
         scores_1d = []
         scores_2d = []
-        for i, (label, score) in enumerate(zip(labels[class_],
-                                               ranking[class_])):
+        for i, (label, score) in enumerate(zip(labels[class_], ranking[class_])):
             if ", " in label:
                 scores_2d.append(score)
                 ranks_2d.append(i)
@@ -157,30 +153,35 @@ def create_plots(mean_deriv, class_deriv_weights, classes, deriv_ops_names, fold
                 ranks_1d.append(i)
         plt.clf()
 
-        plt.plot(ranks_2d,
-                 scores_2d,
-                 "+",
-                 mew=10,
-                 ms=3,
-                 label="Second-order features",
-                 alpha=1.0)
-        plt.plot(ranks_1d,
-                 scores_1d,
-                 "+",
-                 mew=10,
-                 ms=3,
-                 label="First-order features",
-                 alpha=1.0)
+        plt.plot(
+            ranks_2d,
+            scores_2d,
+            "+",
+            mew=10,
+            ms=3,
+            label="Second-order features",
+            alpha=1.0,
+        )
+        plt.plot(
+            ranks_1d,
+            scores_1d,
+            "+",
+            mew=10,
+            ms=3,
+            label="First-order features",
+            alpha=1.0,
+        )
         plt.xlabel("Rank")
         plt.ylabel("$\\langle t_{i} \\rangle$")
         plt.legend()
         output_path = os.path.join(
             args.output_dir,
-            "fold{}_keras_taylor_ranking_{}_{}.png".format(
-                fold, name, class_))
+            "fold{}_keras_taylor_ranking_{}_{}.png".format(fold, name, class_),
+        )
         log.info("Save plot to {}.".format(output_path))
-        plt.savefig(output_path, bbox_inches='tight')
+        plt.savefig(output_path, bbox_inches="tight")
         plt.close()
+
 
 # Function to compute gradients of model answers in optimized graph mode
 @tf.function(experimental_relax_shapes=True)
@@ -201,6 +202,7 @@ def get_gradients(model, samples, output_ind):
     grads = tf.vectorized_map(get_single_gradient, samples)
     return grads
 
+
 # Function to compute hessian of model answers in optimized graph mode
 @tf.function(experimental_relax_shapes=True)
 def get_hessians(model, samples, output_ind):
@@ -208,7 +210,7 @@ def get_hessians(model, samples, output_ind):
     def get_single_hessian(single_sample):
         single_sample = tf.expand_dims(single_sample, axis=0)
 
-        #Function to compute gradient of a vector in regard to inputs (on outer tape)
+        # Function to compute gradient of a vector in regard to inputs (on outer tape)
         def tot_gradient(vector):
             return tape.gradient(vector, single_sample)
 
@@ -217,8 +219,7 @@ def get_hessians(model, samples, output_ind):
             with tf.GradientTape(persistent=True) as tape_of_tape:
                 tape_of_tape.watch(single_sample)
                 # Get response from model with (only choosen output class)
-                response = model(single_sample, training=False)[:,
-                                                                output_ind]
+                response = model(single_sample, training=False)[:, output_ind]
             # Get gradient of choosen output class wrt. input sample
             grads = tape_of_tape.gradient(response, single_sample)
             # Compute hessian of model from gradients of model wrt. input sample
@@ -228,6 +229,7 @@ def get_hessians(model, samples, output_ind):
     # Apply function to every sample to get all hessians
     hessians = tf.vectorized_map(get_single_hessian, samples)
     return hessians
+
 
 # Function to get upper triangle of matrix for every matrix in array
 def triu_map(matrix_array, size):
@@ -240,6 +242,7 @@ def triu_map(matrix_array, size):
 
     # Apply function to every element
     return np.array(list(map(single_triu, matrix_array)))
+
 
 def main(args, training_config):
     ids = list(training_config["parts"].keys())
@@ -256,7 +259,9 @@ def main(args, training_config):
     log.debug("Used variables: {}".format(variables))
     log.info("Open {} events at once.".format(args.num_events))
     length_variables = len(variables) + num_id_inputs
-    length_deriv_class = (length_variables**2 + length_variables) / 2 + length_variables
+    length_deriv_class = (
+        length_variables**2 + length_variables
+    ) / 2 + length_variables
     log.debug("Set up derivative names.")
     deriv_ops_names = []
     if num_id_inputs:
@@ -278,7 +283,7 @@ def main(args, training_config):
         )
         log.info("Load preprocessing {}.".format(preprocessing_path))
         with open(preprocessing_path, "rb") as stream:
-            scaler = pickle.load(stream , encoding="bytes")
+            scaler = pickle.load(stream, encoding="bytes")
         # Load trained model
         model_path = os.path.join(
             args.model_dir,
@@ -290,12 +295,14 @@ def main(args, training_config):
         all_deriv_weights = {}
         for i_id, id_ in enumerate(ids):
 
-            #Get names for first-order and second-order derivatives
+            # Get names for first-order and second-order derivatives
             deriv_values_intermediate = {}
             deriv_weights_intermediate = {}
             for class_ in classes:
                 len_inputs = len(variables) + num_id_inputs
-                deriv_values_intermediate[class_] = np.zeros(int((len_inputs * (len_inputs + 3)) / 2.))
+                deriv_values_intermediate[class_] = np.zeros(
+                    int((len_inputs * (len_inputs + 3)) / 2.0)
+                )
                 deriv_weights_intermediate[class_] = 0
             for process in processes:
                 # Load datashard for this process
@@ -325,9 +332,11 @@ def main(args, training_config):
                     )
                     raise Exception("Consistency error in Tensorflow training.")
                 N_entries = uproot.open(file_path)[mapped_class].num_entries
-                log.info("Process {} with class {} of fold {}:".format(
-                    process, mapped_class, fold
-                ))
+                log.info(
+                    "Process {} with class {} of fold {}:".format(
+                        process, mapped_class, fold
+                    )
+                )
                 log.info("Contains {} events.".format(N_entries))
                 for val_wei in uproot.iterate(
                     file_path,
@@ -340,14 +349,14 @@ def main(args, training_config):
                     log.info("Read chunk with {} events.".format(len(input_weights)))
                     # Apply preprocessing to input data
                     input_data = scaler.transform(
-                        np.transpose(
-                            [val_wei[var] for var in variables]
-                        )
+                        np.transpose([val_wei[var] for var in variables])
                     )
                     # Add one-hot-encoding for the training identifiers if there is more than one
                     # (All 1 if only one identifier is used)
                     if len(ids) > 1:
-                        input_data = np.insert(input_data, len(ids) * [len(variables)], 0, axis=1)
+                        input_data = np.insert(
+                            input_data, len(ids) * [len(variables)], 0, axis=1
+                        )
                         input_data[:, len(variables) + i_id] = 1
                     # Create one-hot-encoded labels for the training classes
                     input_labels = np.array(len(input_data) * [len(classes) * [0]])
@@ -355,49 +364,58 @@ def main(args, training_config):
                     # Transform numpy array with samples to tensorflow tensor
                     sample_tensor = tf.convert_to_tensor(input_data)
                     # Get array of gradients of model wrt. samples
-                    gradients = tf.squeeze(get_gradients(model, sample_tensor,
-                                                        i_class),
-                                        axis=1)
+                    gradients = tf.squeeze(
+                        get_gradients(model, sample_tensor, i_class), axis=1
+                    )
                     # Get array of hessians of model wrt. samples
-                    hessians = tf.squeeze(get_hessians(model, sample_tensor,
-                                                    i_class),
-                                        axis=2)
+                    hessians = tf.squeeze(
+                        get_hessians(model, sample_tensor, i_class), axis=2
+                    )
                     # Fix dimensions if only one sample remains
                     if len(val_wei) == 1:
                         input_weights = np.array(input_weights)
                     # Get array of upper triangles of hessians of model wrt. samples
                     upper_hessian_half = triu_map(hessians.numpy(), length_variables)
                     # Append gradient values to hessian values
-                    deriv_values = np.concatenate((gradients, upper_hessian_half),
-                                                axis=1)
+                    deriv_values = np.concatenate(
+                        (gradients, upper_hessian_half), axis=1
+                    )
                     ## Calculate taylor coefficients ##
                     # Add coefficients / abs of coefficients to previous results
                     if args.no_abs:
                         deriv_values = np.concatenate(
-                            ([deriv_values_intermediate[mapped_class]], deriv_values), axis=0)
+                            ([deriv_values_intermediate[mapped_class]], deriv_values),
+                            axis=0,
+                        )
                     else:
                         deriv_values = np.concatenate(
-                            ([deriv_values_intermediate[mapped_class]], np.abs(deriv_values)),
-                            axis=0)
+                            (
+                                [deriv_values_intermediate[mapped_class]],
+                                np.abs(deriv_values),
+                            ),
+                            axis=0,
+                        )
                     # Add weights coefficients to previous weights
                     deriv_weights = np.concatenate(
-                        ([deriv_weights_intermediate[mapped_class]], input_weights), axis=0)
+                        ([deriv_weights_intermediate[mapped_class]], input_weights),
+                        axis=0,
+                    )
                     # Calculate intermeiate results for coefficients and weights
-                    deriv_values_intermediate[mapped_class] = np.average(deriv_values,
-                                                        weights=deriv_weights,
-                                                        axis=0)
+                    deriv_values_intermediate[mapped_class] = np.average(
+                        deriv_values, weights=deriv_weights, axis=0
+                    )
                     deriv_weights_intermediate[mapped_class] = np.sum(deriv_weights)
             # Collect derivatives and weights
             all_deriv_values[id_] = deriv_values_intermediate
             all_deriv_weights[id_] = deriv_weights_intermediate
             # Create plots for each identifier
             create_plots(
-                deriv_values_intermediate, 
-                deriv_weights_intermediate, 
-                classes, 
-                deriv_ops_names, 
-                fold, 
-                id_
+                deriv_values_intermediate,
+                deriv_weights_intermediate,
+                classes,
+                deriv_ops_names,
+                fold,
+                id_,
             )
         if num_id_inputs:
             # Tylor ranking across the different identifiers
@@ -407,21 +425,13 @@ def main(args, training_config):
             for class_ in classes:
                 dval = [all_deriv_values[id_][class_] for id_ in ids]
                 dwght = [all_deriv_weights[id_][class_] for id_ in ids]
-                gradients[class_] = np.average(
-                    dval,
-                    weights=dwght,
-                    axis=0
-                )
+                gradients[class_] = np.average(dval, weights=dwght, axis=0)
                 weights[class_] = np.sum(dwght)
             # Create combined plots
             create_plots(
-                gradients, 
-                weights, 
-                classes, 
-                deriv_ops_names, 
-                fold, 
-                args.training_name
+                gradients, weights, classes, deriv_ops_names, fold, args.training_name
             )
+
 
 if __name__ == "__main__":
     args = parse_arguments()
