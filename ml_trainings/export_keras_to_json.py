@@ -4,7 +4,7 @@ import logging as log
 log.basicConfig(
     format="Tensorflow_training - %(levelname)s - %(message)s", level=log.DEBUG
 )
-from ml_trainings.Config_merger import get_merged_config
+from ml_util.config_merger import get_merged_config
 import pickle
 import yaml
 import json

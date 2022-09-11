@@ -22,7 +22,7 @@ mpl.use("Agg")
 mpl.rcParams["font.size"] = 16
 import matplotlib.pyplot as plt
 
-from ml_trainings.Config_merger import get_merged_config
+from ml_util.config_merger import get_merged_config
 import Tensorflow_models
 
 

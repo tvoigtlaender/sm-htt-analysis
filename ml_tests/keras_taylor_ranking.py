@@ -13,7 +13,7 @@ import uproot
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from ml_trainings.Config_merger import get_merged_config
+from ml_util.config_merger import get_merged_config
 import matplotlib as mpl
 
 mpl.use("Agg")
@@ -52,9 +52,7 @@ def parse_config(file, name):
 def create_plots(mean_deriv, class_deriv_weights, classes, deriv_ops_names, fold, name):
     log.info("Write 1D taylor plot for {} fold {}.".format(name, fold))
     deriv_all = np.vstack([mean_deriv[class_] for class_ in classes])
-    print(class_deriv_weights)
     weights_all = np.hstack([[class_deriv_weights[class_]] for class_ in classes])
-    print(weights_all)
     if args.no_abs:
         mean_deriv_all = np.average((deriv_all), weights=weights_all, axis=0)
     else:
@@ -322,89 +320,90 @@ def main(args, training_config):
                 )
                 log.debug("Reading {}".format(file_path))
                 # Get input data from files
-                file_class = uproot.open(file_path).keys()[0].split(";")[0]
-                if mapped_class != file_class:
-                    log.error(
-                        "Class mapped by the config file and present in the "
-                        "datashard do not match for {}: {} and {}".format(
-                            file_path, mapped_class, file_class
+                with uproot.open(file_path) as upfile:
+                    file_class = upfile.keys()[0].split(";")[0]
+                    if mapped_class != file_class:
+                        log.error(
+                            "Class mapped by the config file and present in the "
+                            "datashard do not match for {}: {} and {}".format(
+                                file_path, mapped_class, file_class
+                            )
+                        )
+                        raise Exception("Consistency error in Tensorflow training.")
+                    uptree = upfile[mapped_class]
+                    N_entries = uptree.num_entries
+                    log.info(
+                        "Process {} with class {} of fold {}:".format(
+                            process, mapped_class, fold
                         )
                     )
-                    raise Exception("Consistency error in Tensorflow training.")
-                N_entries = uproot.open(file_path)[mapped_class].num_entries
-                log.info(
-                    "Process {} with class {} of fold {}:".format(
-                        process, mapped_class, fold
-                    )
-                )
-                log.info("Contains {} events.".format(N_entries))
-                for val_wei in uproot.iterate(
-                    file_path,
-                    expressions=variables + [weight_var],
-                    library="np",
-                    step_size=args.num_events,
-                ):
-                    # Get weights
-                    input_weights = val_wei[weight_var]
-                    log.info("Read chunk with {} events.".format(len(input_weights)))
-                    # Apply preprocessing to input data
-                    input_data = scaler.transform(
-                        np.transpose([val_wei[var] for var in variables])
-                    )
-                    # Add one-hot-encoding for the training identifiers if there is more than one
-                    # (All 1 if only one identifier is used)
-                    if len(ids) > 1:
-                        input_data = np.insert(
-                            input_data, len(ids) * [len(variables)], 0, axis=1
+                    log.info("Contains {} events.".format(N_entries))
+                    for val_wei in uptree.iterate(
+                        expressions=variables + [weight_var],
+                        library="np",
+                        step_size=args.num_events,
+                    ):
+                        # Get weights
+                        input_weights = val_wei[weight_var]
+                        log.info("Read chunk with {} events.".format(len(input_weights)))
+                        # Apply preprocessing to input data
+                        input_data = scaler.transform(
+                            np.transpose([val_wei[var] for var in variables])
                         )
-                        input_data[:, len(variables) + i_id] = 1
-                    # Create one-hot-encoded labels for the training classes
-                    input_labels = np.array(len(input_data) * [len(classes) * [0]])
-                    input_labels[:, i_class] = 1
-                    # Transform numpy array with samples to tensorflow tensor
-                    sample_tensor = tf.convert_to_tensor(input_data)
-                    # Get array of gradients of model wrt. samples
-                    gradients = tf.squeeze(
-                        get_gradients(model, sample_tensor, i_class), axis=1
-                    )
-                    # Get array of hessians of model wrt. samples
-                    hessians = tf.squeeze(
-                        get_hessians(model, sample_tensor, i_class), axis=2
-                    )
-                    # Fix dimensions if only one sample remains
-                    if len(val_wei) == 1:
-                        input_weights = np.array(input_weights)
-                    # Get array of upper triangles of hessians of model wrt. samples
-                    upper_hessian_half = triu_map(hessians.numpy(), length_variables)
-                    # Append gradient values to hessian values
-                    deriv_values = np.concatenate(
-                        (gradients, upper_hessian_half), axis=1
-                    )
-                    ## Calculate taylor coefficients ##
-                    # Add coefficients / abs of coefficients to previous results
-                    if args.no_abs:
+                        # Add one-hot-encoding for the training identifiers if there is more than one
+                        # (All 1 if only one identifier is used)
+                        if len(ids) > 1:
+                            input_data = np.insert(
+                                input_data, len(ids) * [len(variables)], 0, axis=1
+                            )
+                            input_data[:, len(variables) + i_id] = 1
+                        # Create one-hot-encoded labels for the training classes
+                        input_labels = np.array(len(input_data) * [len(classes) * [0]])
+                        input_labels[:, i_class] = 1
+                        # Transform numpy array with samples to tensorflow tensor
+                        sample_tensor = tf.convert_to_tensor(input_data)
+                        # Get array of gradients of model wrt. samples
+                        gradients = tf.squeeze(
+                            get_gradients(model, sample_tensor, i_class), axis=1
+                        )
+                        # Get array of hessians of model wrt. samples
+                        hessians = tf.squeeze(
+                            get_hessians(model, sample_tensor, i_class), axis=2
+                        )
+                        # Fix dimensions if only one sample remains
+                        if len(val_wei) == 1:
+                            input_weights = np.array(input_weights)
+                        # Get array of upper triangles of hessians of model wrt. samples
+                        upper_hessian_half = triu_map(hessians.numpy(), length_variables)
+                        # Append gradient values to hessian values
                         deriv_values = np.concatenate(
-                            ([deriv_values_intermediate[mapped_class]], deriv_values),
+                            (gradients, upper_hessian_half), axis=1
+                        )
+                        ## Calculate taylor coefficients ##
+                        # Add coefficients / abs of coefficients to previous results
+                        if args.no_abs:
+                            deriv_values = np.concatenate(
+                                ([deriv_values_intermediate[mapped_class]], deriv_values),
+                                axis=0,
+                            )
+                        else:
+                            deriv_values = np.concatenate(
+                                (
+                                    [deriv_values_intermediate[mapped_class]],
+                                    np.abs(deriv_values),
+                                ),
+                                axis=0,
+                            )
+                        # Add weights coefficients to previous weights
+                        deriv_weights = np.concatenate(
+                            ([deriv_weights_intermediate[mapped_class]], input_weights),
                             axis=0,
                         )
-                    else:
-                        deriv_values = np.concatenate(
-                            (
-                                [deriv_values_intermediate[mapped_class]],
-                                np.abs(deriv_values),
-                            ),
-                            axis=0,
+                        # Calculate intermeiate results for coefficients and weights
+                        deriv_values_intermediate[mapped_class] = np.average(
+                            deriv_values, weights=deriv_weights, axis=0
                         )
-                    # Add weights coefficients to previous weights
-                    deriv_weights = np.concatenate(
-                        ([deriv_weights_intermediate[mapped_class]], input_weights),
-                        axis=0,
-                    )
-                    # Calculate intermeiate results for coefficients and weights
-                    deriv_values_intermediate[mapped_class] = np.average(
-                        deriv_values, weights=deriv_weights, axis=0
-                    )
-                    deriv_weights_intermediate[mapped_class] = np.sum(deriv_weights)
+                        deriv_weights_intermediate[mapped_class] = np.sum(deriv_weights)
             # Collect derivatives and weights
             all_deriv_values[id_] = deriv_values_intermediate
             all_deriv_weights[id_] = deriv_weights_intermediate
