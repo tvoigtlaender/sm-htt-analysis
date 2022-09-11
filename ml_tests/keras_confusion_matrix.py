@@ -31,7 +31,7 @@ def parse_arguments():
     parser.add_argument(
         "--num-events",
         help="Number of events in one chunk",
-        default="100 KB",
+        default="100 MB",
     )
     return parser.parse_args()
 
