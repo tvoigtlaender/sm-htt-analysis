@@ -9,6 +9,7 @@ import argparse
 import os
 import yaml
 import pickle
+import time
 import uproot
 import numpy as np
 import tensorflow as tf
@@ -31,7 +32,7 @@ def parse_arguments():
     parser.add_argument(
         "--num-events",
         help="Number of events in one chunk",
-        default="100 MB",
+        default="20 MB",
     )
     return parser.parse_args()
 
@@ -183,6 +184,34 @@ def get_values(model, samples):
 
 
 def main(args, training_config):
+    # Set up CPU resources
+    if os.getenv("OMP_NUM_THREADS"):
+        n_CPU_cores = int(os.environ["OMP_NUM_THREADS"])
+    else:
+        log.info("'OMP_NUM_THREADS' is not set. Defaulting to 12.")
+        n_CPU_cores = 12
+    # Set up GPUs if available
+    tf.config.threading.set_intra_op_parallelism_threads(1)
+    tf.config.threading.set_inter_op_parallelism_threads(1)
+    physical_GPU_devices = tf.config.list_physical_devices("GPU")
+    if physical_GPU_devices:
+        log.info("Default GPU Devices: {}".format(physical_GPU_devices))
+        log.info("Using {} GPUs.".format(len(physical_GPU_devices)))
+        for device in physical_GPU_devices:
+            try:
+                tf.config.experimental.set_memory_growth(device, True)
+            except:
+                # Invalid device or cannot modify virtual devices once initialized.
+                log.error(
+                    "Device memory growth of {} could not be changed.".format(device)
+                )
+        tf.config.threading.set_intra_op_parallelism_threads(max(n_CPU_cores-1, 1))
+        tf.config.threading.set_inter_op_parallelism_threads(1)
+    else:
+        log.info("No GPU found. Using only CPU.")
+        tf.config.threading.set_intra_op_parallelism_threads(1)
+        tf.config.threading.set_inter_op_parallelism_threads(max(n_CPU_cores-1, 1))
+
     # log.info(args)
     ids = list(training_config["parts"].keys())
     num_id_inputs = len(ids) if len(ids) > 1 else 0
@@ -340,4 +369,9 @@ def main(args, training_config):
 if __name__ == "__main__":
     args = parse_arguments()
     training_config = parse_config(args.config_file, args.training_name)
+    runtime_start = time.time()
     main(args, training_config)
+    runtime_end = time.time()
+    log.info(
+        "Elapsed runtime: {}".format(runtime_end - runtime_start)
+    )

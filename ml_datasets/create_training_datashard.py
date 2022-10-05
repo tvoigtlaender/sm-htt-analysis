@@ -9,9 +9,9 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True  # disable ROOT internal argument 
 import argparse
 import yaml
 import os
+import time
 from array import array
 from re import findall
-import os
 
 import logging
 
@@ -45,6 +45,13 @@ def parse_arguments():
     parser.add_argument("--identifier", help="Identifier of datashard")
     parser.add_argument("--fold", help="Fold of datashard (0 or 1)")
     parser.add_argument("--output-dir", help="Root file created by this script")
+    parser.add_argument(
+        "--with-shifts",
+        action="store_true",
+        default=False,
+        help="Also include shifted variables in dataset",
+    )
+
     return parser.parse_args()
 
 
@@ -153,8 +160,12 @@ def main(args, config):
     opt.fMode = "RECREATE"
 
     logger.info("Creating output file: {}".format(output_filename))
-    # Save all variables that do NOT contain "__". Excludes all shifts.
-    saved_variables = "^((?!__).)*$"
+    if args.with_shifts:
+        # Save all variables
+        saved_variables = "^.*$"
+    else:
+        # Save all variables that do NOT contain "__". Excludes all shifts.
+        saved_variables = "^((?!__).)*$"
     rdf.Snapshot(args.training_class, output_filename, saved_variables, opt)
     logger.info("snapshot created for process {}!".format(config["process"]))
 
@@ -162,4 +173,10 @@ def main(args, config):
 if __name__ == "__main__":
     args = parse_arguments()
     config = parse_config(args.config)
+    runtime_start = time.time()
     main(args, config)
+    runtime_end = time.time()
+    logger.info(
+        "Elapsed runtime: {}".format(runtime_end - runtime_start)
+    )
+

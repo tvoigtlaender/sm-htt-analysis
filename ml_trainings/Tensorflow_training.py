@@ -97,10 +97,14 @@ def main(args, training_config):
             log.info("Using mixed precision:")
             log.info("Compute dtype: {}".format(policy.compute_dtype))
             log.info("Variable dtype: {}".format(policy.variable_dtype))
+        tf.config.threading.set_intra_op_parallelism_threads(max(n_CPU_cores-1, 1))
+        tf.config.threading.set_inter_op_parallelism_threads(1)
 
     else:
         log.info("No GPU found. Using only CPU.")
         distribution_strategy = tf.distribute.get_strategy()
+        tf.config.threading.set_intra_op_parallelism_threads(1)
+        tf.config.threading.set_inter_op_parallelism_threads(max(n_CPU_cores-1, 1))
 
     ids = list(training_config["parts"].keys())
     num_id_inputs = len(ids) if len(ids) > 1 else 0
@@ -112,7 +116,7 @@ def main(args, training_config):
     log.debug("Used processes: {}".format(processes))
     log.debug("Used classes: {}".format(classes))
     log.debug("Used variables: {}".format(variables))
-    allowed_types = ["float", "int32_t", "model"]
+    allowed_types = ["float", "int32_t", "double"]
 
     full_data = {}
     for id_ in ids:
@@ -531,4 +535,9 @@ def main(args, training_config):
 if __name__ == "__main__":
     args = parse_arguments()
     training_config = parse_config(args.config_file, args.training_name)
+    runtime_start = time.time()
     main(args, training_config)
+    runtime_end = time.time()
+    log.info(
+        "Elapsed runtime: {}".format(runtime_end - runtime_start)
+    )
