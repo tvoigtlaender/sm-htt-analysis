@@ -205,12 +205,12 @@ def main(args, training_config):
                 log.error(
                     "Device memory growth of {} could not be changed.".format(device)
                 )
-        tf.config.threading.set_intra_op_parallelism_threads(max(n_CPU_cores-1, 1))
+        tf.config.threading.set_intra_op_parallelism_threads(max(n_CPU_cores - 1, 1))
         tf.config.threading.set_inter_op_parallelism_threads(1)
     else:
         log.info("No GPU found. Using only CPU.")
         tf.config.threading.set_intra_op_parallelism_threads(1)
-        tf.config.threading.set_inter_op_parallelism_threads(max(n_CPU_cores-1, 1))
+        tf.config.threading.set_inter_op_parallelism_threads(max(n_CPU_cores - 1, 1))
 
     # log.info(args)
     ids = list(training_config["parts"].keys())
@@ -292,7 +292,9 @@ def main(args, training_config):
                     ):
                         # Get weights
                         input_weights = val_wei[weight_var]
-                        log.info("Read chunk with {} events.".format(len(input_weights)))
+                        log.info(
+                            "Read chunk with {} events.".format(len(input_weights))
+                        )
                         # Add sum of weights to the mapped class
                         sum_weights[i_class] += np.sum(input_weights)
                         # Apply preprocessing to input data
@@ -372,6 +374,4 @@ if __name__ == "__main__":
     runtime_start = time.time()
     main(args, training_config)
     runtime_end = time.time()
-    log.info(
-        "Elapsed runtime: {}".format(runtime_end - runtime_start)
-    )
+    log.info("Elapsed runtime: {}".format(runtime_end - runtime_start))

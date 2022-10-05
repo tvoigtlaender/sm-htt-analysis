@@ -176,7 +176,4 @@ if __name__ == "__main__":
     runtime_start = time.time()
     main(args, config)
     runtime_end = time.time()
-    logger.info(
-        "Elapsed runtime: {}".format(runtime_end - runtime_start)
-    )
-
+    logger.info("Elapsed runtime: {}".format(runtime_end - runtime_start))

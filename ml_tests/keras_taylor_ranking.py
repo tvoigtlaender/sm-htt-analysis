@@ -265,12 +265,12 @@ def main(args, training_config):
                 log.error(
                     "Device memory growth of {} could not be changed.".format(device)
                 )
-        tf.config.threading.set_intra_op_parallelism_threads(max(n_CPU_cores-1, 1))
+        tf.config.threading.set_intra_op_parallelism_threads(max(n_CPU_cores - 1, 1))
         tf.config.threading.set_inter_op_parallelism_threads(1)
     else:
         log.info("No GPU found. Using only CPU.")
         tf.config.threading.set_intra_op_parallelism_threads(1)
-        tf.config.threading.set_inter_op_parallelism_threads(max(n_CPU_cores-1, 1))
+        tf.config.threading.set_inter_op_parallelism_threads(max(n_CPU_cores - 1, 1))
     ids = list(training_config["parts"].keys())
     num_id_inputs = len(ids) if len(ids) > 1 else 0
     processes = training_config["processes"]
@@ -373,7 +373,9 @@ def main(args, training_config):
                     ):
                         # Get weights
                         input_weights = val_wei[weight_var]
-                        log.info("Read chunk with {} events.".format(len(input_weights)))
+                        log.info(
+                            "Read chunk with {} events.".format(len(input_weights))
+                        )
                         # Apply preprocessing to input data
                         input_data = scaler.transform(
                             np.transpose([val_wei[var] for var in variables])
@@ -402,7 +404,9 @@ def main(args, training_config):
                         if len(val_wei) == 1:
                             input_weights = np.array(input_weights)
                         # Get array of upper triangles of hessians of model wrt. samples
-                        upper_hessian_half = triu_map(hessians.numpy(), length_variables)
+                        upper_hessian_half = triu_map(
+                            hessians.numpy(), length_variables
+                        )
                         # Append gradient values to hessian values
                         deriv_values = np.concatenate(
                             (gradients, upper_hessian_half), axis=1
@@ -411,7 +415,10 @@ def main(args, training_config):
                         # Add coefficients / abs of coefficients to previous results
                         if args.no_abs:
                             deriv_values = np.concatenate(
-                                ([deriv_values_intermediate[mapped_class]], deriv_values),
+                                (
+                                    [deriv_values_intermediate[mapped_class]],
+                                    deriv_values,
+                                ),
                                 axis=0,
                             )
                         else:
@@ -466,6 +473,4 @@ if __name__ == "__main__":
     runtime_start = time.time()
     main(args, training_config)
     runtime_end = time.time()
-    log.info(
-        "Elapsed runtime: {}".format(runtime_end - runtime_start)
-    )
+    log.info("Elapsed runtime: {}".format(runtime_end - runtime_start))
